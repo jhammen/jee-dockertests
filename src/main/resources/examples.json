@@ -1,0 +1,7 @@
+[
+	{
+		"name": "hello-servlet",
+		"file": "hello-servlet.war",
+		"path": "../jakartaee-examples/tutorial/web/servlet/hello-servlet/target/"
+	}
+]
