@@ -23,11 +23,6 @@ import freemarker.template.TemplateExceptionHandler;
  *
  */
 public class App {
-	static class Example {
-		public String name;
-		public String file;
-		public String path;
-	}
 
 	public static void main(String[] args) throws Exception {
 		// freemarker config
@@ -41,7 +36,7 @@ public class App {
 		cfg.setSQLDateAndTimeTimeZone(TimeZone.getDefault());
 
 		// app servers
-		String[] appservers = { "glassfish7", "openliberty23" };
+		Server[] appservers = { new Server("glassfish7", "8080"), new Server("openliberty23", "9080") };
 
 		// examples list
 		ClassLoader classLoader = App.class.getClassLoader();
@@ -53,30 +48,29 @@ public class App {
 		Example example = examples[0];
 
 		// set up model for template
-		Map<String, String> context = new HashMap<String, String>();
-		context.put("example", example.name);
-		context.put("warfile", example.file);
+		Map<String, Object> context = new HashMap<String, Object>();
+		context.put("example", example);
 
 		// copy configs if needed
-		String outpath = "images/" + example.name;
+		String outpath = "images/" + example.getName();
 		try {
 			Files.copy(Paths.get("config/ol23-server.xml"), Paths.get(outpath + "/ol23-server.xml"));
 		} catch (FileAlreadyExistsException ex) {
 			System.out.println("* OL server config already exists, delete to recreate");
 		}
 		// copy war if needed
-		String inpath = example.path;
-		String warpath = inpath + "/" + example.file;
+		String inpath = example.getPath();
+		String warpath = inpath + "/" + example.getFile();
 		try {
-			Files.copy(Paths.get(warpath), Paths.get(outpath + "/" + example.file));
+			Files.copy(Paths.get(warpath), Paths.get(outpath + "/" + example.getFile()));
 		} catch (FileAlreadyExistsException ex) {
 			// already there, delete to recreate
 			System.out.println("* war file already exists, delete to recreate");
 		}
 
-		for (String server : appservers) {
-			Template template = cfg.getTemplate(server + ".ftlh");
-			String outfilename = example.name + "-" + server + ".dockerfile";
+		for (Server server : appservers) {
+			Template template = cfg.getTemplate(server.getName() + ".ftlh");
+			String outfilename = example.getName() + "-" + server.getName() + ".dockerfile";
 			String outfilepath = outpath + "/" + outfilename;
 
 			FileWriter filewriter = new FileWriter(outfilepath);
@@ -85,14 +79,21 @@ public class App {
 			template.process(context, filewriter);
 			filewriter.close();
 
-			// create script file
+			// create build + run script files
 			context.put("server", server);
 			Template btemplate = cfg.getTemplate("build.ftlh");
-			String buildpath = outpath + "/" + example.name + "-" + server + "-build.sh";
+			String buildpath = outpath + "/" + example.getName() + "-" + server.getName() + "-build.sh";
 			FileWriter bfilewriter = new FileWriter(buildpath);
 			btemplate.process(context, bfilewriter);
 			bfilewriter.close();
 			new File(buildpath).setExecutable(true);
+
+			Template rtemplate = cfg.getTemplate("run.ftlh");
+			String runpath = outpath + "/" + example.getName() + "-" + server.getName() + "-run.sh";
+			FileWriter rfilewriter = new FileWriter(runpath);
+			rtemplate.process(context, rfilewriter);
+			rfilewriter.close();
+			new File(runpath).setExecutable(true);
 		}
 
 	}
