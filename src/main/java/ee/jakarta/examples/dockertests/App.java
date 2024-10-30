@@ -1,5 +1,6 @@
 package ee.jakarta.examples.dockertests;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
@@ -27,6 +28,7 @@ public class App {
 		public String file;
 		public String path;
 	}
+
 	public static void main(String[] args) throws Exception {
 		// freemarker config
 		Configuration cfg = new Configuration(Configuration.VERSION_2_3_33);
@@ -40,7 +42,7 @@ public class App {
 
 		// app servers
 		String[] appservers = { "glassfish7", "openliberty23" };
-		
+
 		// examples list
 		ClassLoader classLoader = App.class.getClassLoader();
 		InputStream liststream = classLoader.getResourceAsStream("examples.json");
@@ -52,6 +54,7 @@ public class App {
 
 		// set up model for template
 		Map<String, String> context = new HashMap<String, String>();
+		context.put("example", example.name);
 		context.put("warfile", example.file);
 
 		// copy configs if needed
@@ -81,6 +84,15 @@ public class App {
 			template.process(context, out);
 			template.process(context, filewriter);
 			filewriter.close();
+
+			// create script file
+			context.put("server", server);
+			Template btemplate = cfg.getTemplate("build.ftlh");
+			String buildpath = outpath + "/" + example.name + "-" + server + "-build.sh";
+			FileWriter bfilewriter = new FileWriter(buildpath);
+			btemplate.process(context, bfilewriter);
+			bfilewriter.close();
+			new File(buildpath).setExecutable(true);
 		}
 
 	}
