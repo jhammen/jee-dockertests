@@ -4,6 +4,7 @@ public class Example {
 	private String name;
 	private String path;
 	private String file;
+	private String url;
 
 	public String getName() {
 		return name;
@@ -27,5 +28,13 @@ public class Example {
 
 	public void setFile(String file) {
 		this.file = file;
+	}
+
+	public String getUrl() {
+		return url;
+	}
+
+	public void setUrl(String url) {
+		this.url = url;
 	}
 }

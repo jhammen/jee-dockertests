@@ -2,6 +2,13 @@
 	{
 		"name": "hello-servlet",
 		"file": "hello-servlet.war",
-		"path": "../jakartaee-examples/tutorial/web/servlet/hello-servlet/target/"
+		"path": "../jakartaee-examples/tutorial/web/servlet/hello-servlet/target/",
+		"url": "hello-servlet/greeting?name=Duke"
+	},
+	{
+		"name": "hello-faces",
+		"file": "hello-faces.war",
+		"path": "../jakartaee-examples/tutorial/web/faces/hello-faces/target/",
+		"url": "hello-faces/hello.xhtml"
 	}
 ]

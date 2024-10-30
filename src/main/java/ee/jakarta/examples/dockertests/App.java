@@ -2,6 +2,7 @@ package ee.jakarta.examples.dockertests;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -16,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import freemarker.template.Configuration;
 import freemarker.template.Template;
+import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
 
 /**
@@ -36,7 +38,8 @@ public class App {
 		cfg.setSQLDateAndTimeTimeZone(TimeZone.getDefault());
 
 		// app servers
-		Server[] appservers = { new Server("glassfish7", "8080"), new Server("openliberty23", "9080") };
+		Server[] appservers = { new Server("glassfish7", "8080"), new Server("openliberty23", "9080"),
+				new Server("wildfly33", "8080") };
 
 		// examples list
 		ClassLoader classLoader = App.class.getClassLoader();
@@ -44,57 +47,70 @@ public class App {
 		ObjectMapper mapper = new ObjectMapper();
 		Example[] examples = mapper.readValue(liststream, Example[].class);
 
-		// TODO: loop here
-		Example example = examples[0];
+		// loop over examples
+		for (Example example : examples) {
 
-		// set up model for template
-		Map<String, Object> context = new HashMap<String, Object>();
-		context.put("example", example);
+			// set up model for template
+			Map<String, Object> context = new HashMap<String, Object>();
+			context.put("example", example);
 
-		// copy configs if needed
-		String outpath = "images/" + example.getName();
-		try {
-			Files.copy(Paths.get("config/ol23-server.xml"), Paths.get(outpath + "/ol23-server.xml"));
-		} catch (FileAlreadyExistsException ex) {
-			System.out.println("* OL server config already exists, delete to recreate");
+			// create folder if needed
+			String outpath = "images/" + example.getName();
+			File outfile = new File(outpath);
+			if (!outfile.exists()) {
+				outfile.mkdirs();
+			}
+
+			// copy configs if needed
+			try {
+				Files.copy(Paths.get("config/ol23-server.xml"), Paths.get(outpath + "/ol23-server.xml"));
+			} catch (FileAlreadyExistsException ex) {
+				System.out.println("* OL server config already exists, delete to recreate");
+			}
+			// copy war if needed
+			String inpath = example.getPath();
+			String warpath = inpath + "/" + example.getFile();
+			try {
+				Files.copy(Paths.get(warpath), Paths.get(outpath + "/" + example.getFile()));
+			} catch (FileAlreadyExistsException ex) {
+				// already there, delete to recreate
+				System.out.println("* war file already exists, delete to recreate");
+			}
+
+			for (Server server : appservers) {
+				Template template = cfg.getTemplate(server.getName() + ".ftlh");
+				String outfilename = example.getName() + "-" + server.getName() + ".dockerfile";
+				String outfilepath = outpath + "/" + outfilename;
+
+				FileWriter filewriter = new FileWriter(outfilepath);
+				Writer out = new OutputStreamWriter(System.out);
+				template.process(context, out);
+				template.process(context, filewriter);
+				filewriter.close();
+
+				// create build + run script files
+				context.put("server", server);
+				Template btemplate = cfg.getTemplate("build.ftlh");
+				String buildpath = outpath + "/build-" + example.getName() + "-" + server.getName() + ".sh";
+				writeTemplate(context, btemplate, buildpath);
+				new File(buildpath).setExecutable(true);
+
+				Template rtemplate = cfg.getTemplate("run.ftlh");
+				String runpath = outpath + "/run-" + example.getName() + "-" + server.getName() + ".sh";
+				writeTemplate(context, rtemplate, runpath);
+				new File(runpath).setExecutable(true);
+				
+				Template itemplate = cfg.getTemplate("index.ftlh");
+				String htmlpath = outpath + "/test-" + server.getName() + ".html";
+				writeTemplate(context, itemplate, htmlpath);
+			}
 		}
-		// copy war if needed
-		String inpath = example.getPath();
-		String warpath = inpath + "/" + example.getFile();
-		try {
-			Files.copy(Paths.get(warpath), Paths.get(outpath + "/" + example.getFile()));
-		} catch (FileAlreadyExistsException ex) {
-			// already there, delete to recreate
-			System.out.println("* war file already exists, delete to recreate");
-		}
+	}
 
-		for (Server server : appservers) {
-			Template template = cfg.getTemplate(server.getName() + ".ftlh");
-			String outfilename = example.getName() + "-" + server.getName() + ".dockerfile";
-			String outfilepath = outpath + "/" + outfilename;
-
-			FileWriter filewriter = new FileWriter(outfilepath);
-			Writer out = new OutputStreamWriter(System.out);
-			template.process(context, out);
-			template.process(context, filewriter);
-			filewriter.close();
-
-			// create build + run script files
-			context.put("server", server);
-			Template btemplate = cfg.getTemplate("build.ftlh");
-			String buildpath = outpath + "/" + example.getName() + "-" + server.getName() + "-build.sh";
-			FileWriter bfilewriter = new FileWriter(buildpath);
-			btemplate.process(context, bfilewriter);
-			bfilewriter.close();
-			new File(buildpath).setExecutable(true);
-
-			Template rtemplate = cfg.getTemplate("run.ftlh");
-			String runpath = outpath + "/" + example.getName() + "-" + server.getName() + "-run.sh";
-			FileWriter rfilewriter = new FileWriter(runpath);
-			rtemplate.process(context, rfilewriter);
-			rfilewriter.close();
-			new File(runpath).setExecutable(true);
-		}
-
+	private static void writeTemplate(Map<String, Object> context, Template btemplate, String buildpath)
+			throws IOException, TemplateException {
+		FileWriter bfilewriter = new FileWriter(buildpath);
+		btemplate.process(context, bfilewriter);
+		bfilewriter.close();
 	}
 }
