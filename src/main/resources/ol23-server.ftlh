@@ -1,6 +1,8 @@
 <server description="test server">
 	<featureManager>
-		<feature>servlet-6.0</feature>
+<#list example.features as feature>
+		<feature>${feature}</feature>
+</#list>		
 	</featureManager>
 	<httpEndpoint id="defaultHttpEndpoint" host="*"
 		httpPort="9080" httpsPort="9443" />

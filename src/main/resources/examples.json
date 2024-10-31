@@ -3,12 +3,42 @@
 		"name": "hello-servlet",
 		"file": "hello-servlet.war",
 		"path": "../jakartaee-examples/tutorial/web/servlet/hello-servlet/target/",
-		"url": "hello-servlet/greeting?name=Duke"
+		"url": "hello-servlet/greeting?name=Duke",
+		"features": ["servlet-6.0"]
 	},
 	{
 		"name": "hello-faces",
 		"file": "hello-faces.war",
 		"path": "../jakartaee-examples/tutorial/web/faces/hello-faces/target/",
-		"url": "hello-faces/hello.xhtml"
+		"url": "hello-faces/hello.xhtml",				
+		"features": ["faces-4.0"]
+	},
+	{
+		"name": "servletcid",
+		"file": "servletcid.war",
+		"path": "../servletcid/target/",
+		"url": "servletcid/",
+		"features": ["pages-3.1"]		
+	},
+	{
+		"name": "mood",
+		"file": "mood.war",
+		"path": "../jakartaee-examples/tutorial/web/servlet/mood/target/",
+		"url": "mood/report",
+		"features": ["servlet-6.0"]
+	},
+	{
+		"name": "dukeetf",
+		"file": "dukeetf.war",
+		"path": "../jakartaee-examples/tutorial/web/servlet/dukeetf/target/",
+		"url": "dukeetf/",
+		"features": ["faces-4.0", "enterpriseBeans-4.0"]
+	},
+	{
+		"name": "fileupload",
+		"file": "fileupload.war",
+		"path": "../jakartaee-examples/tutorial/web/servlet/fileupload/target/",
+		"url": "fileupload/",
+		"features": ["servlet-6.0"]
 	}
 ]

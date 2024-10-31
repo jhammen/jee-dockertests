@@ -5,6 +5,7 @@ public class Example {
 	private String path;
 	private String file;
 	private String url;
+	private String[] features;
 
 	public String getName() {
 		return name;
@@ -36,5 +37,13 @@ public class Example {
 
 	public void setUrl(String url) {
 		this.url = url;
+	}
+
+	public String[] getFeatures() {
+		return features;
+	}
+
+	public void setFeatures(String[] features) {
+		this.features = features;
 	}
 }

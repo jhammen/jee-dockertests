@@ -61,12 +61,6 @@ public class App {
 				outfile.mkdirs();
 			}
 
-			// copy configs if needed
-			try {
-				Files.copy(Paths.get("config/ol23-server.xml"), Paths.get(outpath + "/ol23-server.xml"));
-			} catch (FileAlreadyExistsException ex) {
-				System.out.println("* OL server config already exists, delete to recreate");
-			}
 			// copy war if needed
 			String inpath = example.getPath();
 			String warpath = inpath + "/" + example.getFile();
@@ -76,6 +70,11 @@ public class App {
 				// already there, delete to recreate
 				System.out.println("* war file already exists, delete to recreate");
 			}
+
+			// write open liberty server xml
+			Template otemplate = cfg.getTemplate("ol23-server.ftlh");
+			writeTemplate(context, otemplate, outpath + "/ol23-server.xml");
+
 
 			for (Server server : appservers) {
 				Template template = cfg.getTemplate(server.getName() + ".ftlh");
